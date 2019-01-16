@@ -96,8 +96,12 @@ module SPM_module
         procedure:: get => get_CSR
         !> @brief Set matrix element.
         procedure:: set => set_CSR
+        !> @brief Summation.
+        procedure:: sum => sum_CSR
         !> @brief Add value to a matrix element.
         procedure:: add => add_CSR
+        !> @brief Multipky a value to all matrix elements.
+        procedure:: all_multiply => all_multiply_CSR
         !> @brief Count nnz in a given block region.
         procedure:: count_block => count_block_CSR
         !> @brief Add values to non-zeros inside a given block region.
@@ -112,7 +116,7 @@ module SPM_module
         final:: destructor_CSR
     end type CSR
 
-    !> @brief An intergace to standard C qsort function
+    !> @brief An interface to standard C qsort function
     interface
         subroutine qsort(arry, n_elem, size_of_elem, compare) bind(C, name='qsort')
             use, intrinsic:: iso_c_binding, only: c_size_t, c_int, c_ptr
@@ -131,7 +135,7 @@ module SPM_module
         end subroutine qsort
     end interface
 
-    !> @brief An intergace to standard C bsearch function
+    !> @brief An interface to standard C bsearch function
     interface
         function bsearch(key, arry, n_elem, size_of_elem, compare) bind(C, name='bsearch')
             use, intrinsic:: iso_c_binding, only: c_size_t, c_int, c_ptr
@@ -150,6 +154,11 @@ module SPM_module
             procedure(compare_func):: compare
             type(c_ptr) :: bsearch
         end function bsearch
+    end interface
+
+    !> @brief An explicit interface so that Intel compiler can work.
+    interface compress
+        module procedure:: compress
     end interface
 
 contains
@@ -441,6 +450,14 @@ contains
         this%vals(loc_cols) = val
     end subroutine set_CSR
 
+    ! sum_CSR
+    function sum_CSR(this) result(ans)
+        class(CSR), intent(in):: this
+        real(kind=8):: ans
+
+        ans = sum(this%vals)
+    end function sum_CSR
+
     ! add_CSR
     subroutine add_CSR(this, i, j, val)
         use, intrinsic:: iso_c_binding, only: c_ptr, c_size_t, c_associated
@@ -467,6 +484,14 @@ contains
         loc_cols = (loc(f_loc_ptr) - loc(this%cols(1))) / sizeof(this%cols(1)) + 1
         this%vals(loc_cols) = this%vals(loc_cols) + val
     end subroutine add_CSR
+
+    ! all_multiply_CSR
+    subroutine all_multiply_CSR(this, factor)
+        class(CSR), intent(inout):: this
+        real(kind=8), intent(in):: factor
+
+        this%vals = this%vals * factor
+    end subroutine all_multiply_CSR
 
     ! count_block_CSR
     function count_block_CSR(this, rowl, rowh, coll, colh) result(ans)
@@ -580,7 +605,7 @@ contains
     end subroutine destructor_CSR
 
     ! compare_int4
-    function compare_int4(a, b)
+    function compare_int4(a, b) bind(C)
         use, intrinsic:: iso_c_binding, only: c_int, c_ptr, c_f_pointer
         type(c_ptr), intent(in), value:: a, b
         integer(kind=c_int):: compare_int4
@@ -593,7 +618,7 @@ contains
     end function compare_int4
 
     ! compress
-    module subroutine compress(A, sp)
+    subroutine compress(A, sp)
         real(kind=8), dimension(:, :), intent(in):: A
         type(CSR), intent(inout):: sp
 
