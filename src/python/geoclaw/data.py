@@ -678,6 +678,10 @@ class LandSpillData(clawpack.clawutil.data.ClawData):
         # Density at ambient temperature
         self.add_attribute('density', 926.6) # unit: kg / m^3
 
+        # extra parameters to hack the AMR algorithms for landspill applications
+        self.add_attribute("update_tol", 0.0)
+        self.add_attribute("refine_tol", 0.0)
+
         # add point source data
         self.add_attribute('point_sources_file', 'point_source.data')
         self.add_attribute('point_sources', PointSourceData())
@@ -712,6 +716,10 @@ class LandSpillData(clawpack.clawutil.data.ClawData):
                         description='Ambient temperature (Celsius)')
         self.data_write('density',
                         description='Density at ambient temperature (kg/m^3')
+
+        # tolerance to control mesh refinement specifically to landspill applications
+        self.data_write("update_tol")
+        self.data_write("refine_tol")
 
         # output point sources data
         self.data_write('point_sources_file',
