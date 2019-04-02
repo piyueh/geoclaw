@@ -12,7 +12,7 @@ module landspill_module
     implicit none
     save
     public
-    private::  get_kinematic_viscosity, landspill_log
+    private:: get_kinematic_viscosity, landspill_log
 
     !> @brief The state of this module.
     logical, private:: module_setup = .false.
@@ -31,6 +31,10 @@ module landspill_module
 
     !> @brief Density at reference temperature.
     real(kind=8):: density = 0D0
+
+    ! parameters controlling AMR specifically for landspill applications
+    real(kind=8) :: update_tol ! tolerance value used in update.f90
+    real(kind=8) :: refine_tol ! used in flag2refine2.f90
 
 
     !> @brief File name of point source settings.
@@ -93,6 +97,8 @@ contains
         read(funit, *) ref_temperature
         read(funit, *) ambient_temperature
         read(funit, *) density
+        read(funit, *) update_tol
+        read(funit, *) refine_tol
         read(funit, *) point_source_file
         read(funit, *) darcy_weisbach_file
         read(funit, *) hydro_feature_file
@@ -167,6 +173,8 @@ contains
         write(funit, *) "Reference Temperature (Celsius): ", ref_temperature
         write(funit, *) "Ambient Temperature (Celsius): ", ambient_temperature
         write(funit, *) "Density (kg / m^3): ", density
+        write(funit, *) 'update_tol: ', update_tol
+        write(funit, *) 'refine_tol: ', refine_tol
         write(funit, *) "Calculated kinematic viscosity (m^2 / s): ", nu
 
         write(funit, *) "Evaporation type: ", evaporation%get_type()
